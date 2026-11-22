@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { ah, HttpError } from '../lib/asyncHandler.js';
 import { requireAuth, requireRole } from '../lib/auth.js';
 import { computeConsumeBy, toKg, DELIVERY_BUFFER_MIN, CATEGORY_INFO } from '../lib/safety.js';
-import { rankReceivers, scoreFor } from '../lib/matching.js';
+import { rankReceivers, scoreFor, scoreTaskForVolunteer } from '../lib/matching.js';
 import { listingInclude, serializeListing } from '../lib/serialize.js';
 import { addEvent, otp, expireStale, broadcast, alertVolunteers } from '../lib/lifecycle.js';
 import { notifyUsers, orgUsers, mail } from '../lib/notify.js';
@@ -108,6 +108,10 @@ r.get('/:id', ah(async (req, res) => {
   if (u.role === 'DONOR' && l.donorOrgId !== u.organizationId) throw new HttpError(403, 'Not your listing');
   const out = serializeListing(l, u);
   if (u.role === 'RECEIVER' && l.status === 'POSTED') out.match = await scoreFor(l, u.organizationId);
+  // Volunteers viewing an open task see whether they can take it (radius, vehicle, time)
+  if (u.role === 'VOLUNTEER' && l.status === 'CLAIMED' && l.claim && !l.claim.selfPickup && !l.claim.volunteerId && u.volunteerProfile) {
+    out.task = scoreTaskForVolunteer(l, u.volunteerProfile);
+  }
   res.json(out);
 }));
 
@@ -301,6 +305,8 @@ r.post('/:id/accept-task', requireRole('VOLUNTEER'), ah(async (req, res) => {
   const l = await mustLoad(req.params.id);
   if (l.status !== 'CLAIMED' || !l.claim || l.claim.selfPickup || l.claim.volunteerId)
     throw new HttpError(409, 'This task is no longer available');
+  const fit = scoreTaskForVolunteer(l, req.user.volunteerProfile);
+  if (!fit.eligible) throw new HttpError(400, `You can't take this pickup: ${fit.blockers.join(', ').toLowerCase()}.`);
   const upd = await prisma.listing.updateMany({ where: { id: l.id, status: 'CLAIMED' }, data: { status: 'ASSIGNED' } });
   if (!upd.count) throw new HttpError(409, 'Another volunteer just took this task');
   await prisma.claim.update({ where: { id: l.claim.id }, data: { volunteerId: req.user.id, assignedAt: new Date() } });

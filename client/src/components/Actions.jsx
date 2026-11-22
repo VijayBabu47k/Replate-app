@@ -4,7 +4,7 @@ import {
   ToggleButtonGroup, ToggleButton, CircularProgress, InputAdornment, Tooltip,
 } from '@mui/material';
 import {
-  LuHandHeart, LuMoon, LuBike, LuKeyRound, LuPackageCheck, LuClipboardCheck, LuX, LuCircleCheck, LuCircleX, LuTruck, LuHouse,
+  LuHandHeart, LuMoon, LuBan, LuBike, LuKeyRound, LuPackageCheck, LuClipboardCheck, LuX, LuCircleCheck, LuCircleX, LuTruck, LuHouse,
 } from 'react-icons/lu';
 import { api, errMsg } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -195,9 +195,14 @@ export default function ListingActions({ listing: l, onChange, compact }) {
   if (user.role === 'VOLUNTEER') {
     if (l.status === 'CLAIMED' && c && !c.selfPickup && !c.volunteer) {
       const offDuty = l.viewer?.onDuty === false;
+      const blockers = l.task && !l.task.eligible ? l.task.blockers : [];
       buttons.push(offDuty ? (
         <Tooltip key="accept" title="You're off duty. Switch on duty to accept pickups.">
           <span><Button variant="contained" size="small" startIcon={<LuMoon size={15} />} disabled>Off duty</Button></span>
+        </Tooltip>
+      ) : blockers.length ? (
+        <Tooltip key="accept" title={`You can't take this pickup: ${blockers.join(', ').toLowerCase()}.`}>
+          <span><Button variant="contained" size="small" startIcon={<LuBan size={15} />} disabled>Can't accept</Button></span>
         </Tooltip>
       ) : (
         <Button key="accept" variant="contained" size="small" startIcon={<LuHandHeart size={15} />} disabled={busy} onClick={() => quiet(call('accept-task', {}, 'Task accepted. Head to the pickup point.'))}>Accept pickup</Button>

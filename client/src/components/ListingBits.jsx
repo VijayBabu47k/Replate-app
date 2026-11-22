@@ -221,13 +221,15 @@ export function FlowStepper({ status }) {
   );
 }
 
+/** Status history, newest event first; the latest one is highlighted. */
 export function Timeline({ events }) {
+  const list = [...events].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   return (
     <ol className="relative m-0 list-none p-0">
-      {events.map((e, i) => (
+      {list.map((e, i) => (
         <li key={e.id} className="relative flex gap-3.5 pb-5 last:pb-0">
-          {i < events.length - 1 && <span className="absolute bottom-0 left-[7px] top-5 w-px bg-gray-200" />}
-          <span className={`relative mt-1 h-[15px] w-[15px] shrink-0 rounded-full ring-4 ring-[color:var(--bg-0)] ${i === events.length - 1 ? 'bg-grad-glow' : 'bg-gray-300'}`} />
+          {i < list.length - 1 && <span className="absolute bottom-0 left-[7px] top-5 w-px bg-gray-200" />}
+          <span className={`relative mt-1 h-[15px] w-[15px] shrink-0 rounded-full ring-4 ring-[color:var(--bg-0)] ${i === 0 ? 'bg-grad-glow' : 'bg-gray-300'}`} />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <StatusChip status={e.status} />

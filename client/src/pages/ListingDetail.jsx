@@ -4,10 +4,21 @@ import { LuTarget, LuHistory, LuUser, LuCircleCheck, LuCircleX, LuSparkles, LuCh
 import Journey from '../components/Journey';
 import { LuIndianRupee } from 'react-icons/lu';
 
-function FeeLine({ l }) {
+function FeeLine({ l, role }) {
   const { amount, state, earnedByMe } = l.fee || {};
   const vol = l.claim?.volunteer?.name;
-  const text = {
+  // Volunteers see the fee from their side: what they will receive
+  const mine = l.viewer?.isVolunteer;
+  const volunteerText = role === 'VOLUNTEER' && {
+    none: 'No delivery fee on this one. Thank you for volunteering!',
+    pending: mine
+      ? (l.status === 'COLLECTED' ? `You'll receive ₹${amount} once the receiver's delivery code is verified.` : `You'll receive ₹${amount} after you deliver this food.`)
+      : `You'll receive ₹${amount} if you accept and deliver this pickup.`,
+    paid: earnedByMe ? `You received ₹${amount} for this delivery.` : `₹${amount} went to ${vol || 'another volunteer'} for this delivery.`,
+    self: 'No delivery needed. The receiver is collecting it themselves.',
+    void: `No payment. This food wasn't delivered.`,
+  }[state];
+  const text = volunteerText || {
     none: 'No delivery fee. Delivered by a volunteer for free.',
     pending: `₹${amount} delivery fee, paid to the volunteer when delivered.`,
     paid: earnedByMe ? `You earned ₹${amount} for this delivery.` : `₹${amount} paid${vol ? ` to ${vol}` : ''} for this delivery.`,
@@ -143,7 +154,7 @@ export default function ListingDetail() {
                 <Fact icon={LuTimer} label="Consume by" value={fmtDateTime(l.consumeBy)} strong />
               </Box>
               {l.notes && <Fact icon={LuNotebookPen} label="Donor notes" value={l.notes} />}
-              <FeeLine l={l} />
+              <FeeLine l={l} role={user.role} />
               {c?.volunteer && (
                 <Box className="flex flex-wrap items-center gap-3 text-sm">
                   <span className="icon-tile h-9 w-9"><VIcon size={17} /></span>
@@ -175,7 +186,7 @@ export default function ListingDetail() {
         <Box className="flex flex-col gap-5">
           <HandlingCard handling={l.handling} storage={l.storage} />
           <Card><CardContent>
-            <CardTitle icon={LuHistory}>Status history</CardTitle>
+            <CardTitle icon={LuHistory} aside={<span className="text-xs text-gray-500">Latest first</span>}>Status history</CardTitle>
             <Timeline events={l.events} />
           </CardContent></Card>
         </Box>
