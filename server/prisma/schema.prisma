@@ -1,0 +1,298 @@
+// RePlate — data model
+// Only four user roles are persisted: DONOR, RECEIVER, VOLUNTEER.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DONOR
+  RECEIVER
+  VOLUNTEER
+}
+
+enum OrgType {
+  DONOR
+  RECEIVER
+}
+
+enum FoodCategory {
+  RICE_DISH
+  CURRY
+  BREAD
+  DRY_SNACK
+  SWEETS
+  SALAD
+  RAW_PRODUCE
+  PACKAGED
+}
+
+enum StorageType {
+  HOT_HELD
+  ROOM_TEMP
+  REFRIGERATED
+}
+
+enum DietType {
+  VEG
+  JAIN
+  VEGAN
+  EGG
+  NON_VEG
+}
+
+enum QuantityUnit {
+  KG
+  SERVINGS
+  TRAYS
+  VESSELS
+}
+
+enum VehicleType {
+  BICYCLE
+  BIKE
+  CAR
+  VAN
+}
+
+enum ListingStatus {
+  POSTED
+  CLAIMED
+  ASSIGNED
+  COLLECTED
+  DELIVERED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+model Organization {
+  id         String   @id @default(cuid())
+  name       String
+  type       OrgType
+  subType    String // e.g. Corporate Cafeteria, Shelter, Community Kitchen
+  zone       String // area / locality name, derived from the pincode
+  address    String // street address line (synthetic data only)
+  country    String   @default("India")
+  state      String
+  city       String
+  pincode    String
+  lat        Float
+  lng        Float
+  verified   Boolean  @default(false)
+  disposalCostPerKg Float? // donors only: what they pay waste haulers (synthetic)
+  fssaiNumber        String? // donors only: FSSAI food business licence number
+  registrationNumber String? // receivers only: NGO / trust registration number
+  createdAt  DateTime @default(now())
+
+  users           User[]
+  receiverProfile ReceiverProfile?
+  listings        Listing[]         @relation("DonorListings")
+  claims          Claim[]           @relation("ReceiverClaims")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  passwordHash   String
+  phone          String // stored with country code, e.g. 919876543210
+  role           Role
+  title          String? // Kitchen Manager, Shift Supervisor, Coordinator...
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
+
+  volunteerProfile VolunteerProfile?
+  listingsCreated  Listing[]         @relation("ListingCreator")
+  claimsMade       Claim[]           @relation("ClaimCreator")
+  deliveries       Claim[]           @relation("ClaimVolunteer")
+  notifications    Notification[]
+  events           StatusEvent[]
+  earnings         Earning[]
+  payouts          Payout[]
+}
+
+model ReceiverProfile {
+  id                  String     @id @default(cuid())
+  organizationId      String     @unique
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  capacityMealsPerDay Int
+  dietAccepted        DietType[]
+  intakeStart         String // "HH:MM"
+  intakeEnd           String
+  hasFridge           Boolean    @default(false)
+  beneficiaryType     String
+  beneficiariesCount  Int        @default(0)
+  acceptingToday      Boolean    @default(true)
+  canSelfPickup       Boolean    @default(false)
+}
+
+model VolunteerProfile {
+  id                String      @id @default(cuid())
+  userId            String      @unique
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle           VehicleType
+  vehicleModel      String? // e.g. "Honda Activa 6G"
+  vehicleNumber     String? // registration plate, e.g. "KA 01 AB 1234" (not needed for bicycles)
+  hasInsulatedBag   Boolean     @default(false)
+  upiId             String? // where delivery earnings are paid out
+  maxRadiusKm       Float       @default(8)
+  available         Boolean     @default(true)
+  country           String      @default("India")
+  state             String
+  city              String
+  pincode           String
+  area              String
+  lat               Float
+  lng               Float
+}
+
+model Listing {
+  id                  String        @id @default(cuid())
+  donorOrgId          String
+  donorOrg            Organization  @relation("DonorListings", fields: [donorOrgId], references: [id])
+  createdById         String
+  createdBy           User          @relation("ListingCreator", fields: [createdById], references: [id])
+  title               String
+  category            FoodCategory
+  dietType            DietType
+  quantity            Float
+  unit                QuantityUnit
+  quantityKg          Float
+  estimatedMeals      Int
+  allergens           String[]
+  storage             StorageType
+  preparedAt          DateTime
+  pickupBy            DateTime
+  consumeBy           DateTime
+  notes               String?
+  pickupInstructions  String?
+  declarationAccepted Boolean       @default(false)
+  postDurationSec     Int?
+  deliveryFee         Int           @default(0) // ₹ paid to the volunteer on delivery (0 = unpaid volunteering)
+  status              ListingStatus @default(POSTED)
+  broadcastLevel      Int           @default(1)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  claim   Claim?
+  events  StatusEvent[]
+  earning Earning?
+
+  @@index([status])
+  @@index([donorOrgId])
+}
+
+model Claim {
+  id             String    @id @default(cuid())
+  listingId      String    @unique
+  listing        Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  receiverOrgId  String
+  receiverOrg    Organization @relation("ReceiverClaims", fields: [receiverOrgId], references: [id])
+  claimedById    String
+  claimedBy      User      @relation("ClaimCreator", fields: [claimedById], references: [id])
+  volunteerId    String?
+  volunteer      User?     @relation("ClaimVolunteer", fields: [volunteerId], references: [id])
+  selfPickup     Boolean   @default(false)
+  matchScore     Float     @default(0)
+  pickupOtp      String
+  deliveryOtp    String
+  claimedAt      DateTime  @default(now())
+  assignedAt     DateTime?
+  collectedAt    DateTime?
+  deliveredAt    DateTime?
+  qualityAccepted Boolean?
+  rejectReason   String?
+  receivedKg     Float?
+
+  @@index([receiverOrgId])
+  @@index([volunteerId])
+}
+
+model StatusEvent {
+  id        String        @id @default(cuid())
+  listingId String
+  listing   Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  status    ListingStatus
+  note      String?
+  actorId   String?
+  actor     User?         @relation(fields: [actorId], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@index([listingId])
+}
+
+model ImpactAssumption {
+  key       String   @id
+  label     String
+  value     Float
+  unit      String
+  source    String
+  note      String?
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  html      String
+  status    String
+  previewUrl String?
+  createdAt DateTime @default(now())
+
+  @@index([to])
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+}
+
+// One credit per delivered listing (listingId unique = never paid twice)
+model Earning {
+  id          String   @id @default(cuid())
+  volunteerId String
+  volunteer   User     @relation(fields: [volunteerId], references: [id])
+  listingId   String   @unique
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  amount      Int
+  payoutId    String?
+  payout      Payout?  @relation(fields: [payoutId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([volunteerId])
+}
+
+// A volunteer's withdrawal of their available balance, settled offline (UPI / bank)
+model Payout {
+  id          String       @id @default(cuid())
+  volunteerId String
+  volunteer   User         @relation(fields: [volunteerId], references: [id])
+  amount      Int
+  upiId       String
+  status      PayoutStatus @default(PENDING)
+  requestedAt DateTime     @default(now())
+  paidAt      DateTime?
+  earnings    Earning[]
+
+  @@index([volunteerId])
+}

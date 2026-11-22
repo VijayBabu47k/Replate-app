@@ -1,0 +1,261 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────── Design tokens ───────── */
+:root {
+  --bg-0: #060907;
+  --bg-1: #08100c;
+  --bg-2: #0c120f;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f8f6;
+  --text-dim: #a8b3ae;
+  --green: #22c55e;
+  --emerald: #10b981;
+  --teal: #0d9488;
+  --lime: #a3e635;
+  --grad-brand: linear-gradient(120deg, #16a34a 0%, #047857 55%, #0f766e 100%);
+  --grad-glow: linear-gradient(135deg, #a3e635 0%, #22c55e 45%, #0d9488 100%);
+  --grad-text: linear-gradient(100deg, #f4f8f6 0%, #bbf7d0 45%, #5eead4 100%);
+  --grad-accent: linear-gradient(100deg, #bef264 0%, #4ade80 45%, #2dd4bf 100%);
+  --glass: rgba(255, 255, 255, 0.04);
+  --glass-edge: rgba(255, 255, 255, 0.05);
+  --glass-shadow: rgba(0, 0, 0, 0.6);
+  --surface-sunk: rgba(255, 255, 255, 0.03);
+  --scroll-thumb: rgba(255, 255, 255, 0.14);
+  --grid: rgba(255, 255, 255, 0.06);
+  --tooltip-bg: rgba(14, 22, 18, 0.97);
+  --amb-a: rgba(34, 197, 94, 0.16);
+  --amb-b: rgba(13, 148, 136, 0.16);
+  --amb-c: rgba(163, 230, 53, 0.06);
+  --beam: rgba(110, 231, 183, 0.10);
+  --vignette: rgba(0, 0, 0, 0.55);
+  --skel-1: rgba(255, 255, 255, 0.04);
+  --skel-2: rgba(255, 255, 255, 0.09);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme='light'] {
+  --bg-0: #f4f7f5;
+  --bg-1: #eef4f0;
+  --bg-2: #ffffff;
+  --line: rgba(10, 31, 22, 0.09);
+  --line-strong: rgba(10, 31, 22, 0.18);
+  --text: #0b1510;
+  --text-dim: #45534c;
+  --grad-text: linear-gradient(100deg, #052e16 0%, #047857 55%, #0f766e 100%);
+  --grad-accent: linear-gradient(100deg, #15803d 0%, #059669 50%, #0d9488 100%);
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-edge: rgba(255, 255, 255, 1);
+  --glass-shadow: rgba(16, 60, 40, 0.16);
+  --surface-sunk: rgba(10, 31, 22, 0.03);
+  --scroll-thumb: rgba(10, 31, 22, 0.2);
+  --grid: rgba(10, 31, 22, 0.07);
+  --tooltip-bg: rgba(11, 21, 16, 0.95);
+  --amb-a: rgba(34, 197, 94, 0.12);
+  --amb-b: rgba(13, 148, 136, 0.10);
+  --amb-c: rgba(163, 230, 53, 0.10);
+  --beam: rgba(16, 185, 129, 0.07);
+  --vignette: rgba(16, 60, 40, 0.06);
+  --skel-1: rgba(10, 31, 22, 0.04);
+  --skel-2: rgba(10, 31, 22, 0.09);
+}
+
+html { background: var(--bg-0); color-scheme: dark; scroll-behavior: smooth; }
+html[data-theme='light'] { color-scheme: light; }
+
+body {
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: Geist, Inter, 'Segoe UI', sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgba(34, 197, 94, 0.35); color: inherit; }
+* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--emerald); outline-offset: 2px; border-radius: 6px; }
+.MuiButtonBase-root:focus-visible, .MuiInputBase-input:focus-visible { outline: none; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+.font-display { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+.font-mono { font-family: 'Geist Mono', ui-monospace, monospace; }
+
+/* ───────── Cinematic atmosphere (fixed, behind everything) ───────── */
+.ambient {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  background:
+    radial-gradient(1100px 650px at 10% -12%, var(--amb-a), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, var(--amb-b), transparent 60%),
+    radial-gradient(900px 700px at 55% 115%, var(--amb-c), transparent 60%),
+    linear-gradient(180deg, var(--bg-0), var(--bg-1));
+}
+/* soft light beam sweeping from the top, like stage lighting */
+.ambient::before {
+  content: ''; position: absolute; top: -30%; left: 20%; width: 60%; height: 120%;
+  background: conic-gradient(from 180deg at 50% 0%, transparent 42%, var(--beam) 50%, transparent 58%);
+  filter: blur(30px); transform-origin: 50% 0;
+  animation: beam 22s ease-in-out infinite alternate;
+}
+/* film grain + vignette */
+.ambient::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 55%, var(--vignette) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.55; will-change: transform; }
+.orb > i { display: block; width: 100%; height: 100%; border-radius: inherit; background: inherit; animation: float 20s ease-in-out infinite alternate; }
+.orb-a { width: 480px; height: 480px; left: -140px; top: 6%; background: radial-gradient(circle, rgba(34, 197, 94, 0.32), transparent 70%); }
+.orb-b { width: 520px; height: 520px; right: -180px; top: 34%; background: radial-gradient(circle, rgba(13, 148, 136, 0.3), transparent 70%); }
+.orb-b > i { animation-duration: 26s; animation-delay: -6s; }
+:root[data-theme='light'] .orb { opacity: 0.4; }
+
+@keyframes beam { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+@keyframes float { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(40px, -36px, 0) scale(1.1); } }
+
+/* ───────── Surfaces ───────── */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 1px 0 var(--glass-edge) inset, 0 24px 48px -28px var(--glass-shadow);
+}
+.sunk { background: var(--surface-sunk); border: 1px solid var(--line); }
+.glow-border { position: relative; }
+.glow-border::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(140deg, rgba(74, 222, 128, 0.55), rgba(255, 255, 255, 0.03) 38%, rgba(255, 255, 255, 0.03) 62%, rgba(45, 212, 191, 0.45));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.text-gradient { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.text-accent { background: var(--grad-accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.bg-grad-brand { background: var(--grad-brand); }
+.bg-grad-glow { background: var(--grad-glow); }
+
+/* Icon tile used across stat cards, empty states and list rows */
+.icon-tile {
+  display: inline-grid; place-items: center; flex-shrink: 0; border-radius: 12px;
+  color: var(--c-brand-700); background: var(--c-brand-50);
+  box-shadow: inset 0 0 0 1px var(--c-brand-100);
+}
+.icon-tile.solid { color: #fff; background: var(--grad-glow); box-shadow: 0 8px 20px -8px rgba(16, 185, 129, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+
+/* Card hover: lift + green edge + pointer spotlight (position set from JS via --mx/--my) */
+.MuiCard-root { position: relative; }
+.card-hover:hover { transform: translateY(-3px); border-color: rgba(52, 211, 153, 0.35) !important; }
+.MuiCard-root::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), rgba(52, 211, 153, 0.09), transparent 60%);
+  transition: opacity 0.3s var(--ease-out);
+}
+.MuiCard-root:hover::after { opacity: 1; }
+
+/* Pills (diet, allergen, countdown, meta) */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 10px;
+  font-size: 12px; font-weight: 600; line-height: 1.4; white-space: nowrap;
+}
+.pill svg { font-size: 13px; flex-shrink: 0; }
+
+/* One-time code display */
+.otp {
+  font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 600; letter-spacing: 0.3em;
+  padding: 4px 6px 4px 12px; border-radius: 10px; border: 1px dashed var(--c-brand-500);
+  background: var(--c-brand-50); color: var(--c-brand-700);
+}
+
+/* Section heading inside pages */
+.section-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.05rem; letter-spacing: -0.015em; margin: 0 0 14px; }
+.section-title .count { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--c-gray-100); color: var(--c-gray-600); }
+
+/* ───────── Motion ───────── */
+@keyframes page-in { from { opacity: 0; transform: translateY(12px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+.page-enter { animation: page-in 0.6s var(--ease-out) both; }
+
+[data-rv='out'] { opacity: 0; transform: translateY(18px) scale(0.99); }
+[data-rv='in'] { animation: rv-in 0.7s var(--ease-out) var(--rv-delay, 0ms) backwards; }
+@keyframes rv-in { from { opacity: 0; transform: translateY(18px) scale(0.99); } to { opacity: 1; transform: none; } }
+
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+.skeleton { background: linear-gradient(90deg, var(--skel-1) 25%, var(--skel-2) 50%, var(--skel-1) 75%); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; border-radius: 16px; }
+
+@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+.pop-in { animation: pop-in 0.45s var(--ease-out) both; }
+
+@keyframes live-dot { 0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); } 100% { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); } }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: live-dot 1.6s ease-out infinite; }
+
+/* ───────── Responsive ───────── */
+@media (max-width: 600px) { .orb { filter: blur(60px); opacity: 0.4; } .orb-a, .orb-b { width: 300px; height: 300px; } }
+
+/* ───────── Reduced motion ───────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  [data-rv='out'] { opacity: 1; transform: none; }
+}
+
+/* ───────── Charts (recharts), theme aware ───────── */
+.recharts-text, .recharts-cartesian-axis-tick-value { fill: var(--text-dim); font-size: 12px; }
+.recharts-cartesian-axis-line, .recharts-cartesian-axis-tick-line { stroke: var(--line-strong); }
+.recharts-cartesian-grid line { stroke: var(--grid); }
+.recharts-default-tooltip { background: var(--tooltip-bg) !important; border: 1px solid var(--line-strong) !important; border-radius: 12px; backdrop-filter: blur(12px); box-shadow: 0 12px 30px -8px var(--glass-shadow); }
+.recharts-tooltip-label, .recharts-tooltip-item { color: #f4f8f6 !important; }
+.recharts-tooltip-cursor { fill: rgba(52, 211, 153, 0.08); }
+iframe[title='email'] { color-scheme: light; }
+
+/* ───────── Live map (Leaflet) ───────── */
+.map-frame { position: relative; overflow: hidden; border-radius: 18px; border: 1px solid var(--line); isolation: isolate; }
+.map-frame .leaflet-container { background: var(--bg-1); font-family: inherit; }
+.map-pin-wrap { background: transparent; border: 0; }
+.map-pin {
+  width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  border: 3px solid #fff; box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.45);
+}
+.pin-donor { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.pin-receiver { background: linear-gradient(135deg, #10b981, #047857); }
+.pin-volunteer { background: linear-gradient(135deg, #2dd4bf, #0d9488); animation: live-dot 1.6s ease-out infinite; }
+.map-frame .leaflet-control-zoom { border: 1px solid var(--line-strong) !important; border-radius: 12px !important; overflow: hidden; box-shadow: 0 8px 20px -10px var(--glass-shadow) !important; }
+.map-frame .leaflet-control-zoom a { background: var(--bg-2) !important; color: var(--text) !important; border-color: var(--line) !important; width: 32px !important; height: 32px !important; line-height: 30px !important; }
+.map-frame .leaflet-control-attribution { background: color-mix(in srgb, var(--bg-2) 80%, transparent) !important; color: var(--text-dim) !important; font-size: 10px; border-top-left-radius: 8px; }
+.map-frame .leaflet-control-attribution a { color: var(--text-dim) !important; }
+.map-frame .leaflet-tooltip { background: var(--tooltip-bg); color: #f4f8f6; border: 1px solid var(--line-strong); border-radius: 8px; font-weight: 600; box-shadow: none; }
+.map-frame .leaflet-tooltip-top::before { border-top-color: var(--tooltip-bg); }
+
+/* Dark mode: re-tint OSM tiles to a deep, low-glare map */
+.map-dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6); }
+.map-frame:not(.map-dark) .leaflet-tile-pane { filter: saturate(0.5) contrast(0.95) brightness(1.03); }
+.map-pin.\!border-2 { border-width: 2px; box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.35); }
+
+/* ───────── Toasts (top-right, rendered in a portal outside #root) ───────── */
+.toast-stack {
+  position: fixed; top: 76px; right: 20px; z-index: 2000;
+  display: flex; flex-direction: column; gap: 10px; width: min(380px, calc(100vw - 32px)); pointer-events: none;
+}
+.toast {
+  pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; padding: 13px 12px 13px 14px;
+  border-radius: 14px; background: var(--bg-2); color: var(--text);
+  border: 1px solid var(--line-strong); border-left: 3px solid var(--toast-color);
+  box-shadow: 0 18px 40px -16px var(--glass-shadow), 0 2px 6px -2px rgba(0, 0, 0, 0.12);
+  font-family: Geist, Inter, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.45;
+  animation: toast-in 0.35s var(--ease-out) both;
+}
+.toast-out { animation: toast-out 0.22s ease-in both; }
+.toast-icon { color: var(--toast-color); display: grid; place-items: center; margin-top: 1px; flex-shrink: 0; }
+.toast-msg { flex: 1; min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
+.toast-close {
+  all: unset; cursor: pointer; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px;
+  color: var(--text-dim); flex-shrink: 0; transition: background 0.2s, color 0.2s;
+}
+.toast-close:hover { background: var(--line); color: var(--text); }
+.toast-close:focus-visible { outline: 2px solid var(--emerald); }
+@keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(24px); } }
+@media (max-width: 600px) { .toast-stack { top: 68px; right: 16px; } }

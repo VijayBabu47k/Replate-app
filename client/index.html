@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="dark" style="background:#060907;color-scheme:dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="theme-color" content="#060907" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Apply the theme before first paint (saved choice, else OS preference) to avoid a flash
+      (function () {
+        try {
+          var s = localStorage.getItem('rts-theme');
+          var m = s === 'light' || s === 'dark' ? s : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          var d = document.documentElement;
+          d.setAttribute('data-theme', m);
+          d.style.colorScheme = m;
+          d.style.background = m === 'light' ? '#f4f7f5' : '#060907';
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23a3e635'/%3E%3Cstop offset='.5' stop-color='%2322c55e'/%3E%3Cstop offset='1' stop-color='%230d9488'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M44 18C28 18 20 26 20 38c0 3 1 6 2 8 4-10 10-15 18-18-7 5-11 10-13 19 2 1 4 1 6 1 12 0 15-12 11-30z' fill='%23ffffff'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <title>RePlate</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
