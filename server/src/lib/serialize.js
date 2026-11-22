@@ -119,6 +119,7 @@ export function serializeListing(l, viewer) {
       actor: e.actor ? { name: e.actor.name, role: e.actor.role } : { name: 'System', role: 'SYSTEM' },
     })),
     handling: handlingCard(l),
-    viewer: { isDonor, isReceiver, isVolunteer, party, onDuty: viewer.role === 'VOLUNTEER' ? !!viewer.volunteerProfile?.available : undefined },
+    viewer: { isDonor, isReceiver, isVolunteer, party, onDuty: viewer.role === 'VOLUNTEER' ? !!viewer.volunteerProfile?.available : undefined,
+      canSelfPickup: viewer.role === 'RECEIVER' ? !!viewer.organization?.receiverProfile?.canSelfPickup : undefined },
   };
 }

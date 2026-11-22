@@ -16,7 +16,7 @@ export async function requireAuth(req, res, next) {
     const payload = jwt.verify(token, SECRET());
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      include: { organization: true, volunteerProfile: true },
+      include: { organization: { include: { receiverProfile: true } }, volunteerProfile: true },
     });
     if (!user) return res.status(401).json({ error: 'User no longer exists' });
     req.user = user;

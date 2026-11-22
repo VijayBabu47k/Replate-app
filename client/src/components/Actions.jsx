@@ -178,8 +178,11 @@ export default function ListingActions({ listing: l, onChange, compact }) {
       const eligible = l.match?.eligible !== false;
       buttons.push(
         <Button key="claim" variant="contained" size="small" startIcon={<LuTruck size={15} />} disabled={busy || !eligible} onClick={() => quiet(call('claim', { selfPickup: false }, 'Claimed. Finding a volunteer now.'))}>Claim for delivery</Button>,
-        <Button key="self" variant="outlined" size="small" startIcon={<LuHouse size={15} />} disabled={busy || !eligible} onClick={() => quiet(call('claim', { selfPickup: true }, 'Claimed for self pickup'))}>We'll collect</Button>,
       );
+      // Only offered when the receiver has turned on "We can collect ourselves" in Needs & capacity
+      if (l.viewer?.canSelfPickup) {
+        buttons.push(<Button key="self" variant="outlined" size="small" startIcon={<LuHouse size={15} />} disabled={busy || !eligible} onClick={() => quiet(call('claim', { selfPickup: true }, 'Claimed for self pickup'))}>We'll collect</Button>);
+      }
     }
     if (l.viewer?.isReceiver && c?.selfPickup && l.status === 'CLAIMED')
       buttons.push(<Button key="collect" variant="contained" size="small" startIcon={<LuKeyRound size={15} />} onClick={() => setDialog('collect')}>Enter pickup code</Button>);

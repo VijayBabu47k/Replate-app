@@ -24,6 +24,36 @@ const foodRows = (l) => [
   ['Pickup by', when(l.pickupBy)],
   ['Consume by', when(l.consumeBy)],
 ];
+/** "919876543210" -> "+91 98765 43210" (readable), digits kept for tel: links. */
+const fmtPhone = (raw) => {
+  const d = String(raw || '').replace(/\D/g, '');
+  if (d.length === 12 && d.startsWith('91')) return `+91 ${d.slice(2, 7)} ${d.slice(7)}`;
+  if (d.length === 10) return `+91 ${d.slice(0, 5)} ${d.slice(5)}`;
+  return d ? `+${d}` : '';
+};
+const telHref = (raw) => {
+  const d = String(raw || '').replace(/\D/g, '');
+  return d.length === 10 ? `tel:+91${d}` : `tel:+${d}`;
+};
+
+/** Highlighted "please pay the volunteer" box for the donor, with phone and UPI ID. */
+export const payVolunteerBox = (vol, amount, title) => {
+  const phone = fmtPhone(vol.phone);
+  const upi = vol.volunteerProfile?.upiId;
+  const row = (k, v) => `<tr><td style="padding:5px 0;color:#065f46;width:34%">${k}</td><td style="padding:5px 0;font-weight:700;color:#064e3b">${v}</td></tr>`;
+  return `<div style="margin:8px 0 16px;padding:16px 18px;border:1px solid #a7f3d0;border-radius:12px;background:#ecfdf5">
+    <div style="font-size:15px;font-weight:700;color:#064e3b;margin-bottom:4px">Please pay ₹${amount} to the volunteer</div>
+    <div style="font-size:13px;color:#047857;margin-bottom:8px">Send the delivery fee directly to ${mail.esc(vol.name)} by UPI or phone payment (GPay, PhonePe, Paytm).</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;font-size:13.5px;border-collapse:collapse">
+      ${row('Volunteer', mail.esc(vol.name))}
+      ${phone ? row('Phone', `<a href="${telHref(vol.phone)}" style="color:#064e3b;text-decoration:none">${mail.esc(phone)}</a>`) : ''}
+      ${upi ? row('UPI ID', mail.esc(upi)) : ''}
+      ${row('Amount', `₹${amount}`)}
+    </table>
+    <div style="font-size:12px;color:#047857;margin-top:8px">Please add "RePlate: ${mail.esc(title)}" in the payment note so the volunteer can match it.</div>
+  </div>`;
+};
+
 const vehicleText = (v) => {
   const p = v?.volunteerProfile;
   if (!p) return '';
@@ -204,6 +234,9 @@ r.post('/:id/cancel', requireRole('DONOR'), ah(async (req, res) => {
 // ---------- Receiver: claim ----------
 r.post('/:id/claim', requireRole('RECEIVER'), ah(async (req, res) => {
   const selfPickup = !!req.body?.selfPickup;
+  if (selfPickup && !req.user.organization?.receiverProfile?.canSelfPickup) {
+    throw new HttpError(400, 'Self pickup is turned off for your organisation. Turn on "We can collect ourselves" in Needs & capacity, or claim for delivery.');
+  }
   const result = await prisma.$transaction(async (tx) => {
     const l = await tx.listing.findUnique({ where: { id: req.params.id } });
     if (!l) throw new HttpError(404, 'Listing not found');
@@ -416,12 +449,15 @@ r.post('/:id/deliver', requireRole('VOLUNTEER', 'RECEIVER'), ah(async (req, res)
     },
   });
   await notifyUsers(await orgUsers(l.donorOrgId), {
-    message: `"${l.title}" reached ${l.claim.receiverOrg.name}`,
+    message: paid
+      ? `"${l.title}" reached ${l.claim.receiverOrg.name}. Please pay ₹${l.deliveryFee} to ${u.name} (${fmtPhone(u.phone)}).`
+      : `"${l.title}" reached ${l.claim.receiverOrg.name}`,
     link: `/listings/${l.id}`,
     email: {
-      subject: `Delivered: ${l.title}`,
+      subject: paid ? `Delivered: ${l.title} · Please pay ₹${l.deliveryFee} to the volunteer` : `Delivered: ${l.title}`,
+      title: `Delivered: ${l.title}`,
       html: mail.p(`<b>${mail.esc(l.title)}</b> reached <b>${mail.esc(l.claim.receiverOrg.name)}</b>${u.role === 'VOLUNTEER' ? ` thanks to <b>${mail.esc(u.name)}</b>` : ''}. The receiver is checking it now.`)
-        + mail.details([['Delivery fee', paid ? `₹${l.deliveryFee} paid to the volunteer` : '']]),
+        + (paid ? payVolunteerBox(u, l.deliveryFee, l.title) : ''),
     },
   });
   res.json(serializeListing(await load(l.id), u));
