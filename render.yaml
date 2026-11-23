@@ -59,7 +59,7 @@ services:
       # Proxy API calls to the backend (keeps the client's relative /api base URL)
       - type: rewrite
         source: /api/*
-        destination: https://replate-api.onrender.com/api/*
+        destination: https://replate-api-wnit.onrender.com/api/*
       # SPA fallback for react-router
       - type: rewrite
         source: /*
