@@ -1,3 +1,5 @@
+# Application Deployed URL : https://replate-client.onrender.com/login
+
 # RePlate
 
 Connects surplus food from corporate cafeterias, caterers and hostel messes to nearby shelters, community kitchens and volunteers, **before it spoils**. Built for *Codebenders ACE Builders' Hackathon 2026, Problem Statement 2*.
