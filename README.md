@@ -1,4 +1,4 @@
-# Application Deployed URL : https://replate-client.onrender.com/login
+# Deployed URL : https://replate-client.onrender.com/login
 
 # RePlate
 
