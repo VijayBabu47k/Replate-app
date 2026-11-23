@@ -1,0 +1,66 @@
+# Render Blueprint — RePlate (Postgres + Express API + Vite static client)
+# Deploy: Render Dashboard → New → Blueprint → pick this repo.
+# If Render renames a service because the name is taken (e.g. replate-api-x1y2),
+# update the /api/* rewrite destination and CLIENT_URL below to match.
+
+databases:
+  - name: replate-db
+    databaseName: rescue_surplus
+    user: replate
+    plan: free
+
+services:
+  - type: web
+    name: replate-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm ci --include=dev && npx prisma generate
+    # Sync the Prisma schema to the database on every boot, then start the API
+    startCommand: npx prisma db push --skip-generate && node src/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: replate-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: https://replate-client.onrender.com
+      - key: PAYOUT_AUTO_SETTLE
+        value: "true"
+      - key: MAIL_MODE
+        value: log
+      # Fill these in the dashboard if you switch MAIL_MODE to gmail/smtp
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: MAIL_REDIRECT_TO
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+
+  - type: web
+    name: replate-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_IS_DEMO
+        value: "true"
+    routes:
+      # Proxy API calls to the backend (keeps the client's relative /api base URL)
+      - type: rewrite
+        source: /api/*
+        destination: https://replate-api.onrender.com/api/*
+      # SPA fallback for react-router
+      - type: rewrite
+        source: /*
+        destination: /index.html
